@@ -144,7 +144,7 @@ class LLMService:
 
     def _get_system_prompt(self) -> str:
         """Get the system prompt that defines the AI's personality and behavior"""
-        return """You are JARVIS, a sophisticated AI assistant with wit and personality. You should be:
+        return """You are ARIA, a sophisticated AI assistant with wit and personality. You should be:
 
 - Helpful and knowledgeable, providing accurate and useful information
 - Witty and engaging, with a touch of British humor when appropriate

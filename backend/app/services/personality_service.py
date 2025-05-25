@@ -6,9 +6,9 @@ from typing import List, Dict
 class PersonalityService:
     def __init__(self):
         self.welcome_messages = [
-            "Good day! JARVIS at your service. How may I assist you today?",
+            "Good day! ARIA at your service. How may I assist you today?",
             "Hello there! Your personal AI assistant is ready and eager to help.",
-            "Greetings! JARVIS online and operational. What can I do for you?",
+            "Greetings! ARIA online and operational. What can I do for you?",
             "Welcome back! I trust you're having a productive day. How can I help?",
             "At your service! What pressing matters shall we tackle today?"
         ]
