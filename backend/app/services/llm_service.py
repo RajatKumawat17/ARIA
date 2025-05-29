@@ -52,13 +52,22 @@ class LLMService:
             logger.error(f"Health check error: {str(e)}")
             return f"Error: {str(e)}"
 
-    async def generate_response(self, prompt: str, stream: bool = False) -> str:
-        """Generate response using Ollama"""
+    async def generate_response(
+        self, 
+        prompt: str, 
+        stream: bool = False,
+        system_prompt: str = None,
+        conversation_context: list = None
+    ) -> str:
+        """Generate response using Ollama with flexible context handling"""
         try:
             session = await self._get_session()
 
-            # Build conversation context
-            messages = self._build_conversation_context(prompt)
+            # Use provided context or build our own
+            if conversation_context:
+                messages = conversation_context
+            else:
+                messages = self._build_conversation_context(prompt, system_prompt)
 
             payload = {
                 "model": self.model_name,
@@ -89,8 +98,9 @@ class LLMService:
                     result = await response.json()
                     assistant_message = result.get("message", {}).get("content", "")
 
-                    # Update conversation history
-                    self._update_conversation_history(prompt, assistant_message)
+                    # Update conversation history if we're managing it internally
+                    if not conversation_context:
+                        self._update_conversation_history(prompt, assistant_message)
 
                     return assistant_message.strip()
 
@@ -124,26 +134,28 @@ class LLMService:
 
         return full_response.strip()
 
-    def _build_conversation_context(self, current_prompt: str) -> list:
+    def _build_conversation_context(self, current_prompt: str, system_prompt: str = None) -> list:
         """Build conversation context with history"""
-        messages = [{"role": "system", "content": self._get_system_prompt()}]
+        # Use provided system prompt or default
+        if system_prompt is None:
+            system_prompt = self._get_default_system_prompt()
+            
+        messages = [{"role": "system", "content": system_prompt}]
 
         # Add conversation history
-        for exchange in self.conversation_history[-self.max_history :]:
-            messages.extend(
-                [
-                    {"role": "user", "content": exchange["user"]},
-                    {"role": "assistant", "content": exchange["assistant"]},
-                ]
-            )
+        for exchange in self.conversation_history[-self.max_history:]:
+            messages.extend([
+                {"role": "user", "content": exchange["user"]},
+                {"role": "assistant", "content": exchange["assistant"]},
+            ])
 
         # Add current prompt
         messages.append({"role": "user", "content": current_prompt})
 
         return messages
 
-    def _get_system_prompt(self) -> str:
-        """Get the system prompt that defines the AI's personality and behavior"""
+    def _get_default_system_prompt(self) -> str:
+        """Get a basic system prompt if none provided"""
         return """You are ARIA, a sophisticated AI assistant with wit and personality. You should be:
 
 - Helpful and knowledgeable, providing accurate and useful information
@@ -153,34 +165,33 @@ class LLMService:
 - Slightly sarcastic occasionally, but never rude or dismissive
 - Always respectful and supportive of the user
 
-You have access to various capabilities that will be added over time:
-- Calendar management (coming soon)
-- Document analysis (coming soon)  
-- Web search (coming soon)
-- Task management (coming soon)
-
-For now, focus on being a helpful conversational assistant. If asked about capabilities you don't have yet, acknowledge it with wit but offer to help in other ways.
-
 Keep responses conversational and engaging. Avoid overly formal language unless the situation calls for it."""
 
     def _update_conversation_history(self, user_input: str, assistant_response: str):
         """Update conversation history for context"""
-        self.conversation_history.append(
-            {
-                "user": user_input,
-                "assistant": assistant_response,
-                "timestamp": datetime.now().isoformat(),
-            }
-        )
+        self.conversation_history.append({
+            "user": user_input,
+            "assistant": assistant_response,
+            "timestamp": datetime.now().isoformat(),
+        })
 
         # Trim history if it gets too long
         if len(self.conversation_history) > self.max_history:
-            self.conversation_history = self.conversation_history[-self.max_history :]
+            self.conversation_history = self.conversation_history[-self.max_history:]
 
     def clear_conversation_history(self):
         """Clear conversation history"""
         self.conversation_history = []
         logger.info("Conversation history cleared")
+
+    def get_conversation_stats(self) -> dict:
+        """Get conversation statistics"""
+        return {
+            "total_exchanges": len(self.conversation_history),
+            "max_history": self.max_history,
+            "oldest_message": self.conversation_history[0]["timestamp"] if self.conversation_history else None,
+            "newest_message": self.conversation_history[-1]["timestamp"] if self.conversation_history else None
+        }
 
     async def close(self):
         """Close the aiohttp session"""
