@@ -5,6 +5,9 @@ class SpeechInterface {
     this.mediaStream = null;
     this.analyzer = null;
     this.animationFrame = null;
+    this.mediaRecorder = null;
+    this.audioChunks = [];
+    this.API_BASE = window.location.origin;
     this.initializeElements();
     this.setupEventListeners();
   }
@@ -30,6 +33,15 @@ class SpeechInterface {
       this.analyzer = this.audioContext.createAnalyser();
       this.analyzer.fftSize = 2048;
       source.connect(this.analyzer);
+
+      // Initialize MediaRecorder for sending audio to backend
+      this.mediaRecorder = new MediaRecorder(this.mediaStream);
+      this.mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          this.audioChunks.push(event.data);
+        }
+      };
+      this.mediaRecorder.onstop = () => this.sendAudioToBackend();
     } catch (error) {
       console.error('Error initializing audio:', error);
       this.statusText.textContent = 'Error accessing microphone';
@@ -52,23 +64,63 @@ class SpeechInterface {
     this.isRecording = true;
     this.recordButton.textContent = '⏹️ Stop';
     this.statusText.textContent = 'Listening...';
+    this.audioChunks = [];
+    this.mediaRecorder.start();
     this.drawWaveform();
   }
 
   async stopRecording() {
     this.isRecording = false;
     this.recordButton.textContent = '🎤 Start';
-    this.statusText.textContent = 'Tap to speak';
+    this.statusText.textContent = 'Processing...';
     
     if (this.animationFrame) {
       cancelAnimationFrame(this.animationFrame);
     }
 
-    if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach(track => track.stop());
+    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+      this.mediaRecorder.stop();
     }
 
     this.clearWaveform();
+  }
+
+  async sendAudioToBackend() {
+    try {
+      const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+      const formData = new FormData();
+      formData.append('audio', audioBlob);
+
+      const response = await fetch(`${this.API_BASE}/api/speech/process`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Get the response text from headers
+      const responseText = response.headers.get('X-Response-Text');
+      const modeSwitch = response.headers.get('X-Mode-Switch');
+
+      // Play audio response
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      await audio.play();
+
+      // Check for mode switch command
+      if (modeSwitch === 'chat') {
+        this.switchMode();
+      }
+
+      this.statusText.textContent = 'Tap to speak';
+
+    } catch (error) {
+      console.error('Error sending audio to backend:', error);
+      this.statusText.textContent = 'Error processing audio';
+    }
   }
 
   drawWaveform() {
@@ -117,6 +169,16 @@ class SpeechInterface {
   }
 
   switchMode() {
+    // Stop recording if active
+    if (this.isRecording) {
+      this.stopRecording();
+    }
+
+    // Clean up audio resources
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop());
+    }
+
     // Switch to chat mode
     document.getElementById('speechInterface').style.display = 'none';
     document.getElementById('chatInterface').style.display = 'flex';
