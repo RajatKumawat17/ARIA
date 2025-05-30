@@ -2,15 +2,17 @@ import sys
 import os
 sys.path.append(os.path.dirname(__file__))
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
+from starlette.responses import Response
 
 from pydantic import BaseModel
 import httpx
 import json
 import os
+import io
 import random
 import re
 from datetime import datetime
@@ -19,12 +21,14 @@ import logging
 
 from services.llm_service import LLMService
 from services.personality_service import PersonalityService
+from services.speech_service import SpeechService
+from config.settings import Settings
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="ARIA Chat Application")
+app = FastAPI(title="ARIA Chat Application with Speech")
 
 # Enable CORS for frontend connection
 app.add_middleware(
@@ -55,25 +59,152 @@ class ChatResponse(BaseModel):
     response: str
     status: str
 
-# Configuration
-OLLAMA_BASE_URL = "http://localhost:11434"
+class SpeechMode(BaseModel):
+    enabled: bool
 
-# Global conversation state and services
+# Global state
 conversation_history = []
 MAX_HISTORY = 10
+current_mode = "voice"  # Start with voice mode
 
-# Settings object for services
-class Settings:
-    OLLAMA_BASE_URL = OLLAMA_BASE_URL
-    OLLAMA_MODEL = "llama3.2"
-
+# Initialize settings and services
 settings = Settings()
-
-# Initialize services
 llm_service = LLMService(settings)
 personality_service = PersonalityService()
+speech_service = SpeechService(settings)
 
-# ================== ENDPOINTS ==================
+# Initialize speech service on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup"""
+    try:
+        if settings.ENABLE_SPEECH:
+            await speech_service.initialize()
+            logger.info("Speech service initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize speech service: {str(e)}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown"""
+    try:
+        await speech_service.cleanup()
+        await llm_service.close()
+    except Exception as e:
+        logger.error(f"Shutdown error: {str(e)}")
+
+# ================== SPEECH ENDPOINTS ==================
+
+@app.post("/api/speech/process")
+async def process_speech(audio: UploadFile = File(...)):
+    """Process speech-to-speech interaction"""
+    if not settings.ENABLE_SPEECH:
+        raise HTTPException(status_code=400, detail="Speech features are disabled")
+    
+    try:
+        # Read audio data
+        audio_data = await audio.read()
+        
+        # Process through speech-to-speech pipeline
+        response_text, response_audio = await speech_service.process_speech_to_speech(
+            audio_data, llm_service, personality_service
+        )
+        
+        # Check if mode switch was requested
+        mode_switch = speech_service.detect_mode_switch(response_text)
+        if mode_switch == "chat":
+            global current_mode
+            current_mode = "chat"
+        
+        # Update conversation history
+        # Note: We'll need the original transcription for this
+        # For now, we'll use the response text as a placeholder
+        update_conversation_history("Voice input", response_text)
+        
+        # Return audio response
+        return StreamingResponse(
+            io.BytesIO(response_audio),
+            media_type="audio/wav",
+            headers={
+                "X-Response-Text": response_text,
+                "X-Mode-Switch": mode_switch or "",
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Speech processing error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Speech processing failed: {str(e)}")
+
+@app.post("/api/speech/transcribe")
+async def transcribe_audio(audio: UploadFile = File(...)):
+    """Transcribe audio to text"""
+    if not settings.ENABLE_SPEECH:
+        raise HTTPException(status_code=400, detail="Speech features are disabled")
+    
+    try:
+        audio_data = await audio.read()
+        transcription = await speech_service.transcribe_audio(audio_data)
+        
+        return {"transcription": transcription, "status": "success"}
+        
+    except Exception as e:
+        logger.error(f"Transcription error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
+
+@app.post("/api/speech/synthesize")
+async def synthesize_speech(text: str = Form(...), voice: str = Form("default")):
+    """Synthesize text to speech"""
+    if not settings.ENABLE_SPEECH:
+        raise HTTPException(status_code=400, detail="Speech features are disabled")
+    
+    try:
+        audio_data = await speech_service.synthesize_speech(text, voice)
+        
+        return StreamingResponse(
+            io.BytesIO(audio_data),
+            media_type="audio/wav"
+        )
+        
+    except Exception as e:
+        logger.error(f"Speech synthesis error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Speech synthesis failed: {str(e)}")
+
+@app.get("/api/speech/status")
+async def get_speech_status():
+    """Get speech service status"""
+    return {
+        "enabled": settings.ENABLE_SPEECH,
+        "initialized": speech_service.is_initialized,
+        "whisper_model": settings.STT_MODEL,
+        "kokoro_available": speech_service.kokoro_path is not None,
+        "current_mode": current_mode
+    }
+
+@app.post("/api/mode/switch")
+async def switch_mode(mode: str = Form(...)):
+    """Switch between voice and chat modes"""
+    global current_mode
+    
+    if mode not in ["voice", "chat"]:
+        raise HTTPException(status_code=400, detail="Invalid mode. Use 'voice' or 'chat'")
+    
+    current_mode = mode
+    
+    return {
+        "mode": current_mode,
+        "message": f"Switched to {mode} mode",
+        "status": "success"
+    }
+
+@app.get("/api/mode/current")
+async def get_current_mode():
+    """Get current interaction mode"""
+    return {
+        "mode": current_mode,
+        "speech_enabled": settings.ENABLE_SPEECH
+    }
+
+# ================== EXISTING ENDPOINTS (PRESERVED) ==================
 
 @app.get("/")
 async def serve_frontend():
@@ -93,6 +224,7 @@ async def serve_frontend():
                 <ul>
                     <li>Backend API: <a href="/docs">http://127.0.0.1:8000/docs</a></li>
                     <li>Health Check: <a href="/health">http://127.0.0.1:8000/health</a></li>
+                    <li>Speech Status: <a href="/api/speech/status">http://127.0.0.1:8000/api/speech/status</a></li>
                 </ul>
             </body>
         </html>
@@ -121,7 +253,7 @@ async def health_check():
     try:
         # Check if Ollama is running
         async with httpx.AsyncClient() as client:
-            response = await client.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=5.0)
+            response = await client.get(f"{settings.OLLAMA_BASE_URL}/api/tags", timeout=5.0)
             ollama_status = "connected" if response.status_code == 200 else "disconnected"
     except:
         ollama_status = "disconnected"
@@ -130,6 +262,8 @@ async def health_check():
         "status": "healthy",
         "backend": "running",
         "ollama": ollama_status,
+        "speech_service": speech_service.is_initialized if settings.ENABLE_SPEECH else "disabled",
+        "current_mode": current_mode,
         "message": "ARIA backend is operational",
         "conversation_history_length": len(conversation_history)
     }
@@ -148,59 +282,39 @@ async def chat_with_ollama(chat_message: ChatMessage):
                     status="success"
                 )
         
+        # Check for mode switch in chat
+        mode_switch = speech_service.detect_mode_switch(chat_message.message) if settings.ENABLE_SPEECH else None
+        if mode_switch == "voice":
+            global current_mode
+            current_mode = "voice"
+            return ChatResponse(
+                response="Switching to voice mode. You can now speak to me!",
+                status="success"
+            )
+        
         # Enhance the prompt with personality and context
         enhanced_prompt = personality_service.enhance_prompt(chat_message.message)
         
         # Build conversation context with history
         messages = build_conversation_context(enhanced_prompt)
         
-        # Prepare the request to Ollama with enhanced context
-        ollama_payload = {
-            "model": chat_message.model,
-            "messages": messages,
-            "stream": False,
-            "options": {
-                "temperature": 0.7,
-                "top_p": 0.9,
-                "max_tokens": 512,
-                "stop": ["Human:", "User:"],
-            }
-        }
+        # Generate response using LLM service
+        response = await llm_service.generate_response(
+            enhanced_prompt,
+            conversation_context=messages
+        )
         
-        logger.info(f"Sending enhanced request to Ollama: {chat_message.model}")
+        # Apply personality filtering
+        enhanced_response = personality_service.filter_response(response)
         
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(
-                f"{OLLAMA_BASE_URL}/api/chat",
-                json=ollama_payload
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                raw_response = result.get("message", {}).get("content", "No response from model")
+        # Update conversation history
+        update_conversation_history(chat_message.message, enhanced_response)
+        
+        return ChatResponse(
+            response=enhanced_response,
+            status="success"
+        )
                 
-                # Apply personality filtering and enhancement
-                enhanced_response = personality_service.filter_response(raw_response)
-                
-                # Update conversation history
-                update_conversation_history(chat_message.message, enhanced_response)
-                
-                return ChatResponse(
-                    response=enhanced_response,
-                    status="success"
-                )
-            else:
-                raise HTTPException(
-                    status_code=response.status_code,
-                    detail=f"Ollama API error: {response.text}"
-                )
-                
-    except httpx.TimeoutException:
-        error_msg = personality_service.get_error_message() + " (Request timed out - make sure Ollama is running with 'ollama serve')"
-        raise HTTPException(status_code=408, detail=error_msg)
-    except httpx.ConnectError:
-        error_msg = personality_service.get_error_message() + " (Cannot connect to Ollama - make sure it's running with 'ollama serve')"
-        raise HTTPException(status_code=503, detail=error_msg)
     except Exception as e:
         error_msg = personality_service.get_error_message() + f" (Technical details: {str(e)})"
         raise HTTPException(status_code=500, detail=error_msg)
@@ -210,7 +324,7 @@ async def get_available_models():
     """Get list of available Ollama models"""
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(f"{OLLAMA_BASE_URL}/api/tags")
+            response = await client.get(f"{settings.OLLAMA_BASE_URL}/api/tags")
             if response.status_code == 200:
                 return response.json()
             else:
@@ -237,7 +351,8 @@ async def get_conversation_stats():
         "total_exchanges": len(conversation_history),
         "max_history": MAX_HISTORY,
         "oldest_message": conversation_history[0]["timestamp"] if conversation_history else None,
-        "newest_message": conversation_history[-1]["timestamp"] if conversation_history else None
+        "newest_message": conversation_history[-1]["timestamp"] if conversation_history else None,
+        "current_mode": current_mode
     }
 
 # ================== HELPER FUNCTIONS ==================
@@ -274,7 +389,9 @@ def update_conversation_history(user_input: str, assistant_response: str):
 
 if __name__ == "__main__":
     import uvicorn
-    print("Starting enhanced ARIA backend server...")
+    print("Starting enhanced ARIA backend server with speech support...")
     print("Make sure Ollama is running: ollama serve")
+    print("Make sure Whisper is installed: pip install openai-whisper")
+    print("Make sure Kokoro TTS is set up (optional - will fallback to espeak)")
     print("Access the application at: http://127.0.0.1:8000")
     uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
