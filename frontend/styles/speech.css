@@ -1,0 +1,102 @@
+/* Speech Interface Styles */
+:root {
+  --primary-color: #10a37f;
+  --background-color: #ffffff;
+  --text-color: #343541;
+  --border-color: #e5e5e5;
+  --hover-color: #f7f7f8;
+}
+
+.speech-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--background-color);
+  padding: 2rem;
+}
+
+.speech-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.speech-title {
+  font-size: 2rem;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+}
+
+.speech-subtitle {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.waveform-container {
+  width: 100%;
+  max-width: 600px;
+  height: 200px;
+  background: var(--hover-color);
+  border-radius: 12px;
+  margin: 2rem 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.waveform-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.speech-controls {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.speech-button {
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  border: none;
+  background: var(--primary-color);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.speech-button:hover {
+  background: #0e906f;
+}
+
+.speech-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.speech-status {
+  margin-top: 1rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.mode-switch {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-switch:hover {
+  background: var(--hover-color);
+}
