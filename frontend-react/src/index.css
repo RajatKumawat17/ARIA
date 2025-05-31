@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900;
+    @apply text-white min-h-screen;
+  }
+}
+
+@layer components {
+  .glass-effect {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+  
+  .voice-button {
+    @apply glass-effect rounded-full p-6 transition-all duration-300;
+    @apply hover:bg-white/20 active:scale-95;
+    @apply shadow-lg hover:shadow-2xl;
+  }
+  
+  .voice-button.recording {
+    @apply bg-red-500/30 border-red-400/50 shadow-red-500/25;
+    animation: pulse 1.5s infinite;
+  }
+  
+  .chat-bubble-user {
+    @apply bg-aria-blue rounded-2xl rounded-br-md p-4 max-w-xs ml-auto;
+    @apply shadow-lg animate-slide-up;
+  }
+  
+  .chat-bubble-assistant {
+    @apply glass-effect rounded-2xl rounded-bl-md p-4 max-w-xs mr-auto;
+    @apply animate-slide-up;
+  }
+  
+  .waveform-bar {
+    @apply bg-gradient-to-t from-aria-blue to-aria-purple rounded-full;
+    animation: waveform 1.5s ease-in-out infinite;
+  }
+  
+  .mode-switch-button {
+    @apply glass-effect px-4 py-2 rounded-full text-sm font-medium;
+    @apply transition-all duration-300 hover:bg-white/20;
+  }
+  
+  .mode-switch-button.active {
+    @apply bg-aria-blue text-white;
+  }
+}
+
+@keyframes waveform {
+  0%, 100% { height: 20%; }
+  50% { height: 100%; }
+}
+
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-white/5 rounded-full;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-white/20 rounded-full hover:bg-white/30;
+}

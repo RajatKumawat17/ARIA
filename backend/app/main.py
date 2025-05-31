@@ -37,18 +37,21 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:8000",
-        "http://127.0.0.1:8000"
+        "http://127.0.0.1:8000",
+        "http://localhost:3001",  # Add this for React dev server alternative port
+        "http://127.0.0.1:3001",  # Add this for React dev server alternative port
     ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["X-Response-Text", "X-Mode-Switch"],  # Add this line to expose custom headers
 )
 
 # Serve static files (frontend) from the frontend directory
-try:
-    app.mount("/static", StaticFiles(directory="frontend"), name="static")
-except:
-    print("Warning: Frontend directory not found. Make sure 'frontend' folder exists.")
+# try:
+#     app.mount("/static", StaticFiles(directory="frontend"), name="static")
+# except:
+#     print("Warning: Frontend directory not found. Make sure 'frontend' folder exists.")
 
 # Pydantic models
 class ChatMessage(BaseModel):
