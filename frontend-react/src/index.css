@@ -15,6 +15,70 @@
 }
 
 @layer components {
+
+  .chat-message-user {
+    @apply bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl px-4 py-3;
+  }
+  
+  .chat-message-assistant {
+    @apply bg-white/5 border border-white/10 text-gray-100 rounded-2xl px-4 py-3;
+  }
+  
+  /* Smooth hover transitions for message actions */
+  .message-actions {
+    @apply opacity-0 group-hover:opacity-100 transition-opacity duration-200;
+  }
+  
+  /* Enhanced input styling */
+  .chat-input {
+    @apply w-full bg-transparent px-4 py-3 pr-12 text-white placeholder-gray-400 focus:outline-none resize-none;
+    min-height: 52px;
+    max-height: 200px;
+  }
+  
+  /* Custom scrollbar for messages */
+  .messages-container::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .messages-container::-webkit-scrollbar-track {
+    @apply bg-white/5 rounded-full;
+  }
+
+  .messages-container::-webkit-scrollbar-thumb {
+    @apply bg-white/20 rounded-full hover:bg-white/30;
+  }
+  
+  /* Prose styling for message content */
+  .prose-message {
+    @apply text-sm leading-relaxed;
+  }
+  
+  .prose-message p {
+    @apply m-0;
+  }
+  
+  .prose-message ul,
+  .prose-message ol {
+    @apply mt-2 mb-2 pl-4;
+  }
+  
+  .prose-message li {
+    @apply mb-1;
+  }
+  
+  .prose-message code {
+    @apply bg-white/10 px-1 py-0.5 rounded text-xs;
+  }
+  
+  .prose-message pre {
+    @apply bg-white/10 p-3 rounded-lg mt-2 mb-2 overflow-x-auto;
+  }
+  
+  .prose-message pre code {
+    @apply bg-transparent p-0;
+  }
+
   .glass-effect {
     @apply bg-white/10 backdrop-blur-md border border-white/20;
   }
@@ -102,4 +166,46 @@
 
 .animate-slide-up {
   animation: slide-up 0.4s ease-out;
+}
+
+@keyframes message-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-message-in {
+  animation: message-slide-in 0.3s ease-out;
+}
+
+/* Typing indicator animation */
+@keyframes typing-bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-typing-bounce {
+  animation: typing-bounce 1.4s infinite;
+}
+
+/* Button hover effects */
+.send-button {
+  @apply transition-all duration-200;
+}
+
+.send-button:hover:not(:disabled) {
+  @apply scale-105 shadow-lg;
+}
+
+.send-button:active:not(:disabled) {
+  @apply scale-95;
 }
