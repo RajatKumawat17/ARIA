@@ -136,127 +136,127 @@ const ChatInterface = ({ onModeSwitch }) => {
   };
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="glass-effect p-4 mb-4 rounded-lg flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-bold">Chat with ARIA</h2>
-          <p className="text-sm text-gray-300">Type your message or say "switch to voice"</p>
-        </div>
-        <button
-          onClick={handleClearHistory}
-          className="p-2 rounded-lg glass-effect hover:bg-white/20 transition-colors"
-          title="Clear chat history"
+  <div className="flex flex-col h-full max-w-5xl mx-auto"> {/* Increased max-width */}
+    {/* Header */}
+    <div className="glass-effect p-4 mb-4 rounded-lg flex justify-between items-center flex-shrink-0">
+      <div>
+        <h2 className="text-xl font-bold">Chat with ARIA</h2>
+        <p className="text-sm text-gray-300">Type your message or say "switch to voice"</p>
+      </div>
+      <button
+        onClick={handleClearHistory}
+        className="p-2 rounded-lg glass-effect hover:bg-white/20 transition-colors"
+        title="Clear chat history"
+      >
+        <Trash2 className="w-5 h-5" />
+      </button>
+    </div>
+
+    {/* Messages Container - This will now take up all available space */}
+    <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4 mb-4 px-2 min-h-0">
+      {messages.map((message) => (
+        <div
+          key={message.id}
+          className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
         >
-          <Trash2 className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4 mb-4 px-2">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div className={`flex items-start space-x-2 max-w-xs sm:max-w-md lg:max-w-lg xl:max-w-xl ${
-              message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''
+          <div className={`flex items-start space-x-2 max-w-lg lg:max-w-xl xl:max-w-2xl ${
+            message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''
+          }`}>
+            {/* Avatar */}
+            <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+              message.type === 'user' 
+                ? 'bg-aria-blue' 
+                : message.type === 'error'
+                ? 'bg-red-500'
+                : 'bg-aria-purple'
             }`}>
-              {/* Avatar */}
-              <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                message.type === 'user' 
-                  ? 'bg-aria-blue' 
-                  : message.type === 'error'
-                  ? 'bg-red-500'
-                  : 'bg-aria-purple'
-              }`}>
-                {message.type === 'user' ? (
-                  <User className="w-4 h-4" />
-                ) : (
-                  <Bot className="w-4 h-4" />
-                )}
-              </div>
-
-              {/* Message Bubble */}
-              <div className={`${
-                message.type === 'user' 
-                  ? 'chat-bubble-user' 
-                  : message.type === 'error'
-                  ? 'bg-red-500/20 border border-red-400/50 rounded-2xl rounded-bl-md p-4 max-w-xs mr-auto'
-                  : 'chat-bubble-assistant'
-              }`}>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                  {message.content}
-                </p>
-                <p className="text-xs opacity-60 mt-2">
-                  {formatTime(message.timestamp)}
-                </p>
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {/* Loading indicator */}
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="flex items-start space-x-2">
-              <div className="w-8 h-8 rounded-full bg-aria-purple flex items-center justify-center">
+              {message.type === 'user' ? (
+                <User className="w-4 h-4" />
+              ) : (
                 <Bot className="w-4 h-4" />
-              </div>
-              <div className="chat-bubble-assistant">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-current rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
+              )}
+            </div>
+
+            {/* Message Bubble - Increased max-width */}
+            <div className={`${
+              message.type === 'user' 
+                ? 'chat-bubble-user' 
+                : message.type === 'error'
+                ? 'bg-red-500/20 border border-red-400/50 rounded-2xl rounded-bl-md p-4 max-w-lg mr-auto'
+                : 'chat-bubble-assistant'
+            }`}>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                {message.content}
+              </p>
+              <p className="text-xs opacity-60 mt-2">
+                {formatTime(message.timestamp)}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {/* Loading indicator */}
+      {isLoading && (
+        <div className="flex justify-start">
+          <div className="flex items-start space-x-2">
+            <div className="w-8 h-8 rounded-full bg-aria-purple flex items-center justify-center">
+              <Bot className="w-4 h-4" />
+            </div>
+            <div className="chat-bubble-assistant">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-current rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
             </div>
           </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-500/20 border border-red-400/50 rounded-lg p-3 mb-4 animate-fade-in">
-          <p className="text-red-200 text-sm">{error}</p>
         </div>
       )}
 
-      {/* Input Form */}
-      <form onSubmit={handleSendMessage} className="glass-effect rounded-lg p-4">
-        <div className="flex space-x-2">
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type your message..."
-            className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-aria-blue focus:border-transparent"
-            disabled={isLoading}
-          />
-          <button
-            type="submit"
-            disabled={!inputMessage.trim() || isLoading}
-            className="bg-aria-blue hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg px-4 py-2 transition-colors flex items-center justify-center"
-          >
-            {isLoading ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
-          </button>
-        </div>
-        
-        {/* Input help text */}
-        <p className="text-xs text-gray-400 mt-2">
-          Press Enter to send • Shift+Enter for new line
-        </p>
-      </form>
+      <div ref={messagesEndRef} />
     </div>
-  );
+
+    {/* Error Display */}
+    {error && (
+      <div className="bg-red-500/20 border border-red-400/50 rounded-lg p-3 mb-4 animate-fade-in flex-shrink-0">
+        <p className="text-red-200 text-sm">{error}</p>
+      </div>
+    )}
+
+    {/* Input Form - Fixed at bottom */}
+    <form onSubmit={handleSendMessage} className="glass-effect rounded-lg p-4 flex-shrink-0">
+      <div className="flex space-x-2">
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputMessage}
+          onChange={(e) => setInputMessage(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="Type your message..."
+          className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-aria-blue focus:border-transparent text-base"
+          disabled={isLoading}
+        />
+        <button
+          type="submit"
+          disabled={!inputMessage.trim() || isLoading}
+          className="bg-aria-blue hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg px-6 py-3 transition-colors flex items-center justify-center"
+        >
+          {isLoading ? (
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+          ) : (
+            <Send className="w-5 h-5" />
+          )}
+        </button>
+      </div>
+      
+      {/* Input help text */}
+      <p className="text-xs text-gray-400 mt-2">
+        Press Enter to send • Shift+Enter for new line
+      </p>
+    </form>
+  </div>
+);
 };
 
 export default ChatInterface;

@@ -31,12 +31,12 @@
   }
   
   .chat-bubble-user {
-    @apply bg-aria-blue rounded-2xl rounded-br-md p-4 max-w-xs ml-auto;
+    @apply bg-aria-blue rounded-2xl rounded-br-md p-4 max-w-lg ml-auto;
     @apply shadow-lg animate-slide-up;
   }
   
   .chat-bubble-assistant {
-    @apply glass-effect rounded-2xl rounded-bl-md p-4 max-w-xs mr-auto;
+    @apply glass-effect rounded-2xl rounded-bl-md p-4 max-w-lg mr-auto;
     @apply animate-slide-up;
   }
   
@@ -71,4 +71,35 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-white/20 rounded-full hover:bg-white/30;
+}
+
+/* Add animation for fade-in */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
 }
