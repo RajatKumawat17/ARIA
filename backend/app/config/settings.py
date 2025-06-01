@@ -30,7 +30,7 @@ class Settings:
         
         # Speech Configuration (for future phases)
         self.STT_MODEL: str = os.getenv("STT_MODEL", "base")  # Whisper model size
-        self.TTS_ENGINE: str = os.getenv("TTS_ENGINE", "pyttsx3")  # TTS engine choice
+        # self.TTS_ENGINE: str = os.getenv("TTS_ENGINE", "pyttsx3")  # TTS engine choice
         
         # API Keys (for future integrations)
         self.GOOGLE_CALENDAR_CREDENTIALS: Optional[str] = os.getenv("GOOGLE_CALENDAR_CREDENTIALS")

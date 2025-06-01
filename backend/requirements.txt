@@ -1,31 +1,32 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-python-multipart==0.0.6
-websockets==12.0
-pydantic==2.5.0
-sqlalchemy==2.0.23
-sqlite3
+# Backend Requirements
+fastapi
+uvicorn[standard]
+python-multipart
+websockets
+pydantic
+sqlalchemy
 
 # AI/ML
-openai-whisper==20231117
-torch==2.1.1
-sentence-transformers==2.2.2
-chromadb==0.4.18
+openai-whisper
+torch
+sentence-transformers
+chromadb
 
 # Integrations
-google-auth==2.25.2
-google-auth-oauthlib==1.1.0
-google-api-python-client==2.108.0
-requests==2.31.0
-python-dotenv==1.0.0
+google-auth
+google-auth-oauthlib
+google-api-python-client
+requests
+python-dotenv
 
-# Speech
-pyttsx3==2.90
-pyaudio==0.2.11
-speechrecognition==3.10.0
+# Speech (simplified)
+numpy
 
 # Utilities
 asyncio
-aiofiles==23.2.1
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
+aiofiles
+aiohttp
+
+# Streamlit Frontend
+streamlit
+audio-recorder-streamlit

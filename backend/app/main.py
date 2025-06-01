@@ -98,45 +98,45 @@ async def shutdown_event():
 
 # ================== SPEECH ENDPOINTS ==================
 
-@app.post("/api/speech/process")
-async def process_speech(audio: UploadFile = File(...)):
-    """Process speech-to-speech interaction"""
-    if not settings.ENABLE_SPEECH:
-        raise HTTPException(status_code=400, detail="Speech features are disabled")
+# @app.post("/api/speech/process")
+# async def process_speech(audio: UploadFile = File(...)):
+#     """Process speech-to-speech interaction"""
+#     if not settings.ENABLE_SPEECH:
+#         raise HTTPException(status_code=400, detail="Speech features are disabled")
     
-    try:
-        # Read audio data
-        audio_data = await audio.read()
+#     try:
+#         # Read audio data
+#         audio_data = await audio.read()
         
-        # Process through speech-to-speech pipeline
-        response_text, response_audio = await speech_service.process_speech_to_speech(
-            audio_data, llm_service, personality_service
-        )
+#         # Process through speech-to-speech pipeline
+#         response_text, response_audio = await speech_service.process_speech_to_speech(
+#             audio_data, llm_service, personality_service
+#         )
         
-        # Check if mode switch was requested
-        mode_switch = speech_service.detect_mode_switch(response_text)
-        if mode_switch == "chat":
-            global current_mode
-            current_mode = "chat"
+#         # Check if mode switch was requested
+#         mode_switch = speech_service.detect_mode_switch(response_text)
+#         if mode_switch == "chat":
+#             global current_mode
+#             current_mode = "chat"
         
-        # Update conversation history
-        # Note: We'll need the original transcription for this
-        # For now, we'll use the response text as a placeholder
-        update_conversation_history("Voice input", response_text)
+#         # Update conversation history
+#         # Note: We'll need the original transcription for this
+#         # For now, we'll use the response text as a placeholder
+#         update_conversation_history("Voice input", response_text)
         
-        # Return audio response
-        return StreamingResponse(
-            io.BytesIO(response_audio),
-            media_type="audio/wav",
-            headers={
-                "X-Response-Text": response_text,
-                "X-Mode-Switch": mode_switch or "",
-            }
-        )
+#         # Return audio response
+#         return StreamingResponse(
+#             io.BytesIO(response_audio),
+#             media_type="audio/wav",
+#             headers={
+#                 "X-Response-Text": response_text,
+#                 "X-Mode-Switch": mode_switch or "",
+#             }
+#         )
         
-    except Exception as e:
-        logger.error(f"Speech processing error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Speech processing failed: {str(e)}")
+#     except Exception as e:
+#         logger.error(f"Speech processing error: {str(e)}")
+#         raise HTTPException(status_code=500, detail=f"Speech processing failed: {str(e)}")
 
 @app.post("/api/speech/transcribe")
 async def transcribe_audio(audio: UploadFile = File(...)):
@@ -154,23 +154,23 @@ async def transcribe_audio(audio: UploadFile = File(...)):
         logger.error(f"Transcription error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
 
-@app.post("/api/speech/synthesize")
-async def synthesize_speech(text: str = Form(...), voice: str = Form("default")):
-    """Synthesize text to speech"""
-    if not settings.ENABLE_SPEECH:
-        raise HTTPException(status_code=400, detail="Speech features are disabled")
+# @app.post("/api/speech/synthesize")
+# async def synthesize_speech(text: str = Form(...), voice: str = Form("default")):
+#     """Synthesize text to speech"""
+#     if not settings.ENABLE_SPEECH:
+#         raise HTTPException(status_code=400, detail="Speech features are disabled")
     
-    try:
-        audio_data = await speech_service.synthesize_speech(text, voice)
+#     try:
+#         audio_data = await speech_service.synthesize_speech(text, voice)
         
-        return StreamingResponse(
-            io.BytesIO(audio_data),
-            media_type="audio/wav"
-        )
+#         return StreamingResponse(
+#             io.BytesIO(audio_data),
+#             media_type="audio/wav"
+#         )
         
-    except Exception as e:
-        logger.error(f"Speech synthesis error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Speech synthesis failed: {str(e)}")
+#     except Exception as e:
+#         logger.error(f"Speech synthesis error: {str(e)}")
+#         raise HTTPException(status_code=500, detail=f"Speech synthesis failed: {str(e)}")
 
 @app.get("/api/speech/status")
 async def get_speech_status():
@@ -179,33 +179,33 @@ async def get_speech_status():
         "enabled": settings.ENABLE_SPEECH,
         "initialized": speech_service.is_initialized,
         "whisper_model": settings.STT_MODEL,
-        "kokoro_available": speech_service.kokoro_path is not None,
+        # "kokoro_available": speech_service.kokoro_path is not None,
         "current_mode": current_mode
     }
 
-@app.post("/api/mode/switch")
-async def switch_mode(mode: str = Form(...)):
-    """Switch between voice and chat modes"""
-    global current_mode
+# @app.post("/api/mode/switch")
+# async def switch_mode(mode: str = Form(...)):
+#     """Switch between voice and chat modes"""
+#     global current_mode
     
-    if mode not in ["voice", "chat"]:
-        raise HTTPException(status_code=400, detail="Invalid mode. Use 'voice' or 'chat'")
+#     if mode not in ["voice", "chat"]:
+#         raise HTTPException(status_code=400, detail="Invalid mode. Use 'voice' or 'chat'")
     
-    current_mode = mode
+#     current_mode = mode
     
-    return {
-        "mode": current_mode,
-        "message": f"Switched to {mode} mode",
-        "status": "success"
-    }
+#     return {
+#         "mode": current_mode,
+#         "message": f"Switched to {mode} mode",
+#         "status": "success"
+#     }
 
-@app.get("/api/mode/current")
-async def get_current_mode():
-    """Get current interaction mode"""
-    return {
-        "mode": current_mode,
-        "speech_enabled": settings.ENABLE_SPEECH
-    }
+# @app.get("/api/mode/current")
+# async def get_current_mode():
+#     """Get current interaction mode"""
+#     return {
+#         "mode": current_mode,
+#         "speech_enabled": settings.ENABLE_SPEECH
+#     }
 
 # ================== EXISTING ENDPOINTS (PRESERVED) ==================
 
@@ -395,6 +395,6 @@ if __name__ == "__main__":
     print("Starting enhanced ARIA backend server with speech support...")
     print("Make sure Ollama is running: ollama serve")
     print("Make sure Whisper is installed: pip install openai-whisper")
-    print("Make sure Kokoro TTS is set up (optional - will fallback to espeak)")
+    # print("Make sure Kokoro TTS is set up (optional - will fallback to espeak)")
     print("Access the application at: http://127.0.0.1:8000")
     uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
